@@ -20,6 +20,8 @@ function love.load()
     -- love.window.setMode(GraphicsWidth,GraphicsHeight, {vsync = -1, msaa = 8})
 
     love.graphics.setCanvas()
+    DX = 0
+    DY = 0
 
     Scene = Engine.newScene(GraphicsWidth, GraphicsHeight)
 
@@ -29,6 +31,7 @@ function love.load()
         {1, 1, 1,     0,1},
         {1, -1, 1,    0,0}
     }, {1,0,0}, 1.0)
+
 end
 
 --[[
@@ -79,12 +82,36 @@ function triColor(coords, color, scale)
     return model
 end
 
+function updateVelocity()
+    if love.keyboard.isDown("up") or love.keyboard.isDown("w") then
+        DX = 0
+        DY = 1
+    elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
+        DX = 0
+        DY = -1
+    elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
+        DX = -1
+        DY = 0
+    elseif love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+        DX = 1
+        DY = 0
+    else
+        DX = 0
+        DY = 0
+    end
+end
+
+function love.keyreleased(key)
+    updateVelocity()
+end
 
 function love.keypressed(key)
     if love.keyboard.isDown("c") then
         local isRelative = love.mouse.getRelativeMode()
         love.mouse.setRelativeMode(not isRelative)
     end
+
+    updateVelocity()
 
     --local turnDirection = love.keyboard.isDown("left") and -1 or (love.keyboard.isDown("right") and 1 or 0)
 end
@@ -104,6 +131,12 @@ function love.update(dt)
     else
         return
     end
+
+    local Camera = Engine.camera
+    local angle = Camera.angle.x
+
+    Camera.pos.x = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * dt
+    Camera.pos.z = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * dt
 end
 
 function love.draw()
