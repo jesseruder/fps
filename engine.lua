@@ -248,55 +248,25 @@ function engine.newScene(renderWidth,renderHeight)
     scene.bulletShader = love.graphics.newShader[[
         uniform mat4 view;
         uniform float time;
-        uniform float screenWidth;
-        varying float size;
 
         #ifdef VERTEX
-
-        attribute vec3 startPosition;
-        attribute vec3 endPosition;
         attribute float startTime;
-        attribute float velocity;
-
+        
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
-            if (time < startTime) {
-                size = 0.0;
-                return vec4(2.0, 2.0, 2.0, 1.0);
+            float elapsedTime = time - startTime;
+            if (elapsedTime > 0.015 || mod(elapsedTime * 10, 1.0) > 0.5) {
+                return vec4(2.0, 2.0, 0.0, 1.0);
             }
 
-            float timeElapsed = time - startTime;
-            float distance = timeElapsed * velocity;
-            float distanceToEnd = length(endPosition - startPosition);
-            if (distance > distanceToEnd) {
-                size = 0.0;
-                return vec4(2.0, 2.0, 2.0, 1.0);
-            }
-
-            vec3 direction = normalize(endPosition - startPosition);
-            vec3 position = startPosition + direction * distance;
-
-            float spriteWidth = 1.0;
-
-            vec4 eyePos = view * vec4(position.x, position.y, position.z, 1.0);
-            vec4 projCorner = vec4(0.5*spriteWidth, 0.5*spriteWidth, eyePos.z, eyePos.w);
-            size = screenWidth * projCorner.x / projCorner.w;
-
-            return eyePos;
+            vec4 p = vertex_position;
+            vec4 result = view * p;
+            return result;
         }
         #endif
 
         #ifdef PIXEL
         vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
-            vec2 coord = gl_PointCoord - vec2(0.5);
-            float radius = 0.0001 * size;
-
-            //if (radius > 0.5) {
-                //radius = 0.5;
-            //}
-
-            if(length(coord) > radius)
-                discard;
-            return vec4(0.0,1.0,0.0,0.8);
+            return vec4(0.0, 1.0, 0.0, 0.8);
         }
         #endif
     ]]
@@ -363,7 +333,7 @@ function engine.newScene(renderWidth,renderHeight)
     scene.modelList = {}
 
     engine.camera = {
-        pos = cpml.vec3(0, 1.0, -1),
+        pos = cpml.vec3(0, 0.5, -1),
         angle = cpml.vec3(1, 0, 0),
         perspective = TransposeMatrix(cpml.mat4.from_perspective(60, renderWidth/renderHeight, 0.1, 10000)),
         transform = cpml.mat4(),
@@ -471,9 +441,8 @@ function engine.newScene(renderWidth,renderHeight)
         if BulletsMesh then
             love.graphics.setShader(self.bulletShader)
             self.bulletShader:send("time", timeElapsed)
-            self.bulletShader:send("screenWidth", GraphicsWidth)
             self.bulletShader:send("view", Camera.perspective * TransposeMatrix(Camera.transform))
-            love.graphics.setPointSize(40)
+            love.graphics.setMeshCullMode("none")
             love.graphics.draw(BulletsMesh, -self.renderWidth/2, -self.renderHeight/2)
         end
 

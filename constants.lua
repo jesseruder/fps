@@ -3,7 +3,7 @@ LogicRate = 60
 LogicAccumulator = 0
 PhysicsStep = true
 
-FogColor = {1,1,1,1}
+FogColor = {0,0,0,1}
 FogStartDist = 0
 FogDivide = 10
 FontColor = {0.3, 0.3, 0.3, 1}

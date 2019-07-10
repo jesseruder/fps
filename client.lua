@@ -5,10 +5,20 @@ require "levels_tools.skybox"
 require "levels_tools.heightmap"
 require "levels_tools.terrain"
 
+require "player"
+
+MAX_BULLETS = 200
+
 function resetGame()
    BulletsVerts = {}
    BulletsMesh = nil
+   BulletsIdx = 1
+   Players = {}
+
+   local player = createPlayer()
+   table.insert(Players, player)
 end
+
 
 function love.load()
     -- window graphics settings
@@ -33,7 +43,7 @@ function love.load()
     WorldSize = 50
 
     makeHeightMap()
-    addMountainRelative(0, 0, 6, 0.1)
+    --[[addMountainRelative(0, 0, 6, 0.1)
     addMountainRelative(0.8, 0.8, 6, 0.1)
     addMountainRelative(0, 0.8, 6, 0.1)
     addMountainRelative(0.8, 0, 6, 0.1)
@@ -43,63 +53,58 @@ function love.load()
     addMountainRelative(0.1, 0.8, 1, 0.09)
     addMountainRelative(0.76, 0.13, 2, 0.13)
 
-    addMountainRelative(0.5, 0.30, 3, 0.07)
+    addMountainRelative(0.5, 0.30, 3, 0.07)]]--
 
 
-    defaultSkybox = love.graphics.newImage("assets/levels/skybox.png")
-    terrainImage = love.graphics.newImage("assets/levels/desert.png")
+    defaultSkybox = love.graphics.newImage("assets/levels/dark-skybox.png")
+    terrainImage = love.graphics.newImage("assets/levels/ground.png")
     skybox(defaultSkybox)
     terrain(terrainImage)
 
-    rectColor({
+    --[[rectColor({
         {-1, -1, 1,   1,0},
         {-1, 1, 1,    1,1},
         {1, 1, 1,     0,1},
         {1, -1, 1,    0,0}
-    }, {1,0,0}, 1.0)
+    }, {1,0,0}, 1.0)]]--
 
     resetGame()
 end
 
 function fireBullet()
---[[
-table.insert(BulletsVerts, {
-        0.0, -- unused
-        0.0,
-        0.0,
-        0.0, -- startPosition
-        1.0,
-        0.0,
-        10.0, -- endPosition
-        1.0,
-        10.0,
-        1.0, -- startTime
-        0.5, -- velocity
-    })
-
-]]--
-
-    local Camera = Engine.camera
-    local angle = Camera.angle.x
-    local bulletVecX = math.cos(angle - math.pi/2)
-    local bulletVecZ = math.sin(angle - math.pi/2)
-    local dist = 10
-
-    table.insert(BulletsVerts, {
-0.0,0.0,0.0,
-Camera.pos.x, Camera.pos.y, Camera.pos.z,
-Camera.pos.x + bulletVecX * dist, Camera.pos.y, Camera.pos.z + bulletVecZ * dist,
-TimeElapsed,
-1.0,
-    })
+    fireSingleBullet(cameraPlaneVec(-0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
+    fireSingleBullet(cameraPlaneVec(0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
 
     BulletsMesh = love.graphics.newMesh({
         {"VertexPosition", "float", 3},
-        {"startPosition", "float", 3},
-        {"endPosition", "float", 3},
-        {"startTime", "float", 1},
-        {"velocity", "float", 1},
-    }, BulletsVerts, "points")
+        {"startTime", "float", 1}
+    }, BulletsVerts, "triangles")
+end
+
+function fireSingleBullet(diff, yDiff, time)
+    local Camera = Engine.camera
+    local angle = Camera.angle.x
+
+    local bulletVecX = math.cos(angle - math.pi/2) * math.cos(-Camera.angle.y)
+    local bulletVecY = math.sin(-Camera.angle.y)
+    local bulletVecZ = math.sin(angle - math.pi/2) * math.cos(-Camera.angle.y)
+    local dist = 10
+
+    local startVec = {Camera.pos.x + diff[1], Camera.pos.y + yDiff, Camera.pos.z + diff[2]}
+    local endVec = {startVec[1] + bulletVecX * dist, startVec[2] + bulletVecY * dist, startVec[3] + bulletVecZ * dist}
+    local billboardVec = {0.0, 0.02, 0.0}
+
+    table.insert(BulletsVerts, BulletsIdx, {startVec[1], startVec[2], startVec[3], time})
+    table.insert(BulletsVerts, BulletsIdx + 1, {endVec[1], endVec[2], endVec[3], time})
+    table.insert(BulletsVerts, BulletsIdx + 2, {endVec[1] + billboardVec[1], endVec[2] + billboardVec[2], endVec[3] + billboardVec[3], time})
+    table.insert(BulletsVerts, BulletsIdx + 3, {startVec[1], startVec[2], startVec[3], time + 0.1})
+    table.insert(BulletsVerts, BulletsIdx + 4, {endVec[1] + billboardVec[1], endVec[2] + billboardVec[2], endVec[3] + billboardVec[3], time + 0.1})
+    table.insert(BulletsVerts, BulletsIdx + 5, {startVec[1] + billboardVec[1], startVec[2] + billboardVec[2], startVec[3] + billboardVec[3], time + 0.1})
+
+    BulletsIdx = BulletsIdx + 6
+    if BulletsIdx > MAX_BULLETS then
+        BulletsIdx = 1
+    end
 end
 
 --[[
@@ -195,6 +200,16 @@ function love.keypressed(key)
     --local turnDirection = love.keyboard.isDown("left") and -1 or (love.keyboard.isDown("right") and 1 or 0)
 end
 
+function cameraPlaneVec(dx, dy)
+    local Camera = Engine.camera
+    local angle = Camera.angle.x
+
+    return {
+        (math.cos(angle) * dx + math.cos(angle - math.pi/2) * dy),
+        (math.sin(angle) * dx + math.sin(angle - math.pi/2) * dy),
+    }
+end
+
 function love.update(dt)
     TimeElapsed = TimeElapsed + dt
     -- Scene:basicCamera(dt)
@@ -216,6 +231,10 @@ function love.update(dt)
 
     Camera.pos.x = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * dt
     Camera.pos.z = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * dt
+
+    for k,v in pairs(Players) do
+        updatePlayerPosition(v)
+    end
 end
 
 function love.draw()
