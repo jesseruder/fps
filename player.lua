@@ -115,6 +115,10 @@ function createPlayer()
     return Player
 end
 
+function normalizeAngle(angle)
+    return math.fmod(angle, 2.0 * math.pi)
+end
+
 function updatePlayerPosition(dt, player)
     if not player.isRendered then
         return
@@ -144,7 +148,15 @@ function updatePlayerPosition(dt, player)
     end
 
     local desiredAngle = math.atan2(CurrentPlayer.z - player.z, CurrentPlayer.x - player.x)
-    if desiredAngle > player.angle then
+    local diffAngle = desiredAngle - normalizeAngle(player.angle)
+
+    if math.abs(diffAngle - math.pi * 2.0) < math.abs(diffAngle) then
+        diffAngle = diffAngle - math.pi * 2.0
+    elseif math.abs(diffAngle + math.pi * 2.0) < math.abs(diffAngle) then
+        diffAngle = diffAngle + math.pi * 2.0
+    end
+
+    if diffAngle > 0 then
         player.angle = player.angle + dt * 0.5
     else
         player.angle = player.angle - dt * 0.5
