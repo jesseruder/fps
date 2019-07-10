@@ -1,8 +1,13 @@
 require "constants"
 Engine = require "engine"
 
+require "levels_tools.skybox"
+require "levels_tools.heightmap"
+require "levels_tools.terrain"
+
 function resetGame()
-   
+   BulletsVerts = {}
+   BulletsMesh = nil
 end
 
 function love.load()
@@ -25,6 +30,27 @@ function love.load()
 
     Scene = Engine.newScene(GraphicsWidth, GraphicsHeight)
 
+    WorldSize = 50
+
+    makeHeightMap()
+    addMountainRelative(0, 0, 6, 0.1)
+    addMountainRelative(0.8, 0.8, 6, 0.1)
+    addMountainRelative(0, 0.8, 6, 0.1)
+    addMountainRelative(0.8, 0, 6, 0.1)
+
+    addMountainRelative(0.9, 0.3, 2, 0.07)
+    addMountainRelative(0.6, 0.75, 3, 0.08)
+    addMountainRelative(0.1, 0.8, 1, 0.09)
+    addMountainRelative(0.76, 0.13, 2, 0.13)
+
+    addMountainRelative(0.5, 0.30, 3, 0.07)
+
+
+    defaultSkybox = love.graphics.newImage("assets/levels/skybox.png")
+    terrainImage = love.graphics.newImage("assets/levels/desert.png")
+    skybox(defaultSkybox)
+    terrain(terrainImage)
+
     rectColor({
         {-1, -1, 1,   1,0},
         {-1, 1, 1,    1,1},
@@ -32,6 +58,48 @@ function love.load()
         {1, -1, 1,    0,0}
     }, {1,0,0}, 1.0)
 
+    resetGame()
+end
+
+function fireBullet()
+--[[
+table.insert(BulletsVerts, {
+        0.0, -- unused
+        0.0,
+        0.0,
+        0.0, -- startPosition
+        1.0,
+        0.0,
+        10.0, -- endPosition
+        1.0,
+        10.0,
+        1.0, -- startTime
+        0.5, -- velocity
+    })
+
+]]--
+
+    local Camera = Engine.camera
+    local angle = Camera.angle.x
+    local bulletVecX = math.cos(angle - math.pi/2)
+    local bulletVecZ = math.sin(angle - math.pi/2)
+    local dist = 10
+
+    table.insert(BulletsVerts, {
+0.0,0.0,0.0,
+Camera.pos.x, Camera.pos.y, Camera.pos.z,
+Camera.pos.x + bulletVecX * dist, Camera.pos.y, Camera.pos.z + bulletVecZ * dist,
+TimeElapsed,
+1.0,
+    })
+
+    BulletsMesh = love.graphics.newMesh({
+        {"VertexPosition", "float", 3},
+        {"startPosition", "float", 3},
+        {"endPosition", "float", 3},
+        {"startTime", "float", 1},
+        {"velocity", "float", 1},
+    }, BulletsVerts, "points")
 end
 
 --[[
@@ -83,21 +151,32 @@ function triColor(coords, color, scale)
 end
 
 function updateVelocity()
+    DX = 0
+    DY = 0
+
     if love.keyboard.isDown("up") or love.keyboard.isDown("w") then
-        DX = 0
-        DY = 1
-    elseif love.keyboard.isDown("down") or love.keyboard.isDown("s") then
-        DX = 0
-        DY = -1
-    elseif love.keyboard.isDown("left") or love.keyboard.isDown("a") then
-        DX = -1
-        DY = 0
-    elseif love.keyboard.isDown("right") or love.keyboard.isDown("d") then
-        DX = 1
-        DY = 0
-    else
-        DX = 0
-        DY = 0
+        DY = DY + 1
+    end
+    if love.keyboard.isDown("down") or love.keyboard.isDown("s") then
+        DY = DY - 1
+    end
+    if love.keyboard.isDown("left") or love.keyboard.isDown("a") then
+        DX = DX - 1
+    end
+    if love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+        DX = DX + 1
+    end
+
+    if DX ~= 0 or DY ~= 0 then
+        local l = math.sqrt(DX * DX + DY * DY)
+        DX = DX / l
+        DY = DY / l
+    end
+end
+
+function love.mousepressed( x, y, button, istouch, presses )
+    if button == 1 then
+        fireBullet()
     end
 end
 
@@ -150,6 +229,15 @@ function love.draw()
             love.graphics.print("[c] to capture or release mouse input", GraphicsWidth - 350, 20)
             
             love.graphics.setColor(1, 1, 1, 1)
+
+            local crosshairSize = 30
+            local crosshairDistFromCenter = 20
+
+            love.graphics.setLineWidth(2)
+            love.graphics.line(GraphicsWidth / 2 - crosshairDistFromCenter - crosshairSize, GraphicsHeight / 2, GraphicsWidth / 2 - crosshairDistFromCenter, GraphicsHeight / 2)
+            love.graphics.line(GraphicsWidth / 2 + crosshairDistFromCenter + crosshairSize, GraphicsHeight / 2, GraphicsWidth / 2 + crosshairDistFromCenter, GraphicsHeight / 2)
+            love.graphics.line(GraphicsWidth / 2, GraphicsHeight / 2 - crosshairDistFromCenter - crosshairSize, GraphicsWidth / 2, GraphicsHeight / 2 - crosshairDistFromCenter)
+            love.graphics.line(GraphicsWidth / 2, GraphicsHeight / 2 + crosshairDistFromCenter + crosshairSize, GraphicsWidth / 2, GraphicsHeight / 2 + crosshairDistFromCenter)
         end, true
     )
 end
