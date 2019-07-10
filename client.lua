@@ -68,7 +68,7 @@ function love.load()
 
 
     local defaultSkybox = love.graphics.newImage("assets/levels/dark-skybox.png")
-    local terrainImage = love.graphics.newImage("assets/levels/ground.png")
+    local terrainImage = love.graphics.newImage("assets/concrete.png")
     skybox(defaultSkybox)
     terrain(terrainImage)
 
@@ -96,9 +96,9 @@ function fireBullet(player)
 end
 
 function fireSingleBullet(originX, originY, originZ, angle, angleY, diff, yDiff, time)
-    local bulletVecX = math.cos(angle - math.pi/2) * math.cos(-angleY)
+    local bulletVecX = math.cos(angle) * math.cos(-angleY)
     local bulletVecY = math.sin(-angleY)
-    local bulletVecZ = math.sin(angle - math.pi/2) * math.cos(-angleY)
+    local bulletVecZ = math.sin(angle) * math.cos(-angleY)
 
     local startVec = {originX + diff[1], originY + yDiff, originZ + diff[2]}
 
@@ -234,8 +234,8 @@ end
 
 function planeVec(angle, dx, dy)
     return {
-        (math.cos(angle) * dx + math.cos(angle - math.pi/2) * dy),
-        (math.sin(angle) * dx + math.sin(angle - math.pi/2) * dy),
+        (math.cos(angle + math.pi/2) * dx + math.cos(angle) * dy),
+        (math.sin(angle + math.pi/2) * dx + math.sin(angle) * dy),
     }
 end
 
@@ -264,7 +264,7 @@ function love.update(dt)
     CurrentPlayer.x = Camera.pos.x
     CurrentPlayer.z = Camera.pos.z
 
-    CurrentPlayer.angle = Camera.angle.x
+    CurrentPlayer.angle = Camera.angle.x - math.pi/2
     CurrentPlayer.angleY = Camera.angle.y
 
     for k,v in pairs(Players) do

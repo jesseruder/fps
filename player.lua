@@ -1,12 +1,14 @@
 
 function playerHit(player)
-    for k,v in pairs(player.models) do
-        v.tintColor = {1.0, 0.0, 0.0}
+    if player.models then
+        for k,v in pairs(player.models) do
+            v.tintColor = {1.0, 0.0, 0.0}
+        end
+        player.tintCountdown = 0.1
     end
 
     Scene:explosion(player.x, player.y, player.z)
 
-    player.tintCountdown = 0.1
 end
 
 function createPlayer()
@@ -18,6 +20,8 @@ function createPlayer()
         x = 0.0,
         y = 0.5,
         z = 0.0,
+        speed = 0.2,
+        bulletCountdown = 1.0,
         isRendered = true,
     }
 
@@ -128,6 +132,15 @@ function updatePlayerPosition(dt, player)
             end
         end
     end
+
+    player.bulletCountdown = player.bulletCountdown - dt
+    if player.bulletCountdown < 0.0 then
+        fireBullet(player)
+        player.bulletCountdown = 1.0
+    end
+
+    player.x = player.x + math.cos(player.angle) * dt * player.speed
+    player.z = player.z + math.sin(player.angle) * dt * player.speed
 
     for k,v in pairs(player.models) do
         v:setTransform({player.x, player.y, player.z}, {-player.angle, cpml.vec3.unit_y, player.angleUp, cpml.vec3.unit_z, player.angleSide, cpml.vec3.unit_x})
