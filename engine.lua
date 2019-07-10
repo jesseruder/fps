@@ -157,6 +157,53 @@ function engine.newScene(renderWidth,renderHeight)
         {"VertexPosition", "float", 3},
     }, particleVerts, "points")
 
+    local explosionParticleVerts = {}
+    for i = 0, 100000 do
+        table.insert(explosionParticleVerts, {
+            0.0,
+            -10.0,
+            0.0,
+            0.0,
+            -10.0,
+            0.0,
+            0.0,
+        })
+    end
+    scene.explosionParticles = love.graphics.newMesh({
+        {"VertexPosition", "float", 3},
+        {"endPosition", "float", 3},
+        {"startTime", "float", 1},
+    }, explosionParticleVerts, "points")
+    scene.explosionParticles:setTexture(love.graphics.newImage("assets/explosion.png"))
+    scene.currentExplosionIdx = 1
+
+    EXPLOSION_START_DIST = 0.7
+    EXPLOSION_DIST = 3.0
+    scene.explosion = function (self, x, y, z)
+        for i = 1, 40 do
+            local rx = (math.random() - 0.5)
+            local ry = (math.random() - 0.5)
+            local rz = (math.random() - 0.5)
+
+            explosionParticleVerts[scene.currentExplosionIdx] = {
+                x + rx * EXPLOSION_START_DIST,
+                y + ry * EXPLOSION_START_DIST,
+                z + rz * EXPLOSION_START_DIST,
+                x + rx * EXPLOSION_DIST,
+                y + ry * EXPLOSION_DIST,
+                z + rz * EXPLOSION_DIST,
+                TimeElapsed + math.random() * 0.3,
+            }
+
+            scene.currentExplosionIdx = scene.currentExplosionIdx + 1
+            if scene.currentExplosionIdx >= 100000 then
+                scene.currentExplosionIdx = 1
+            end
+        end
+
+        scene.explosionParticles:setVertices(explosionParticleVerts)
+    end
+
     -- define the shaders used in rendering the scene
     scene.threeShader = love.graphics.newShader[[
         uniform mat4 view;
@@ -211,6 +258,7 @@ function engine.newScene(renderWidth,renderHeight)
         #endif
     ]]
 
+    --PARTICLES_ENABLED = true
     scene.particleShader = love.graphics.newShader[[
         uniform mat4 view;
         uniform float time;
@@ -240,7 +288,78 @@ function engine.newScene(renderWidth,renderHeight)
 
             if(length(coord) > radius)
                 discard;
-            return vec4(1.0,1.0,1.0,0.8);
+
+            return vec4(1.0, 1.0, 1.0, 0.8);
+            //return Texel(texture, gl_PointCoord);
+        }
+        #endif
+    ]]
+
+    scene.explosionShader = love.graphics.newShader[[
+        uniform mat4 view;
+        uniform float time;
+        uniform vec3 cameraPos;
+        varying float dist;
+        varying float percentDone;
+
+        #ifdef VERTEX
+        attribute vec3 endPosition;
+        attribute float startTime;
+
+        vec4 position(mat4 transform_projection, vec4 vertex_position) {
+            if (time - startTime > 0.5) {
+                return vec4(2.0, 2.0, 0.0, 1.0);
+            }
+
+            float percent = (time - startTime) / 0.5;
+            vec4 vec = vec4(endPosition.x, endPosition.y, endPosition.z, 1.0) - vertex_position;
+            vec4 pos = vertex_position + vec * percent;
+
+            dist = length(vec3(pos.x, pos.y, pos.z) - cameraPos);
+            percentDone = percent;
+
+            vec4 result = view * pos;
+            return result;
+        }
+        #endif
+
+        #ifdef PIXEL
+        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+            vec2 coord = gl_PointCoord - vec2(0.5);
+            float radius = 0.5;
+            radius = 8 * radius / dist;
+
+            if (radius > 0.5) {
+                radius = 0.5;
+            }
+
+            if(length(coord) > radius)
+                discard;
+
+            float percentX = ((coord.x / radius) + 1.0) / 2.0;
+            float percentY = ((coord.y / radius) + 1.0) / 2.0;
+
+            float idx = floor(percentDone * 16.0);
+            float percentToNextIdx = percentDone * 16.0 - idx;
+            float xAsset = idx - 4 * floor(idx / 4.0);
+            float yAsset = floor(idx / 4.0);
+            float nextIdx = idx + 1;
+            if (nextIdx > 15) {
+                nextIdx = 15;
+            }
+
+            float xAssetNext = nextIdx - 4 * floor(nextIdx / 4.0);
+            float yAssetNext = floor(nextIdx / 4.0);
+
+            vec4 currentColor = Texel(texture, vec2(percentX, percentY) * vec2(0.25, 0.25) + vec2(0.25 * xAsset, 0.25 * yAsset));
+            vec4 nextColor = Texel(texture, vec2(percentX, percentY) * vec2(0.25, 0.25) + vec2(0.25 * xAssetNext, 0.25 * yAssetNext));
+
+            vec4 result = nextColor * percentToNextIdx + currentColor * (1.0 - percentToNextIdx);
+            if (result.a < 0.01 || result.r + result.g + result.b < 0.3) {
+                discard;
+            }
+
+            return result;
         }
         #endif
     ]]
@@ -403,6 +522,13 @@ function engine.newScene(renderWidth,renderHeight)
         for i=1, #self.modelList do
             local model = self.modelList[i]
             if model ~= nil and model.visible and #model.verts > 0 then
+
+                if model.tintColor then
+                    love.graphics.setColor(model.tintColor[1], model.tintColor[2], model.tintColor[3], 1)
+                else
+                    love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
+                end
+
                 self.threeShader:send("model_matrix", model.transform)
                 local fogAmount = 1.0
                 if model.fogAmount then
@@ -436,6 +562,17 @@ function engine.newScene(renderWidth,renderHeight)
             self.particleShader:send("view", Camera.perspective * TransposeMatrix(Camera.transform))
             love.graphics.setPointSize(20)
             love.graphics.draw(self.particles, -self.renderWidth/2, -self.renderHeight/2)
+        end
+
+        if self.explosionParticles then
+            --love.graphics.setBlendMode("add")
+            love.graphics.setShader(self.explosionShader)
+            self.explosionShader:send("time", timeElapsed)
+            self.explosionShader:send("view", Camera.perspective * TransposeMatrix(Camera.transform))
+            self.explosionShader:send("cameraPos", {Camera.pos.x, Camera.pos.y, Camera.pos.z})
+            love.graphics.setPointSize(200)
+            love.graphics.draw(self.explosionParticles, -self.renderWidth/2, -self.renderHeight/2)
+            --love.graphics.setBlendMode("alpha")
         end
 
         if BulletsMesh then

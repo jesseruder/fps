@@ -36,6 +36,7 @@ function terrain(imageDirt, wave)
 
     terrainModel = Engine.newModel(groundVerts, imageDirt)
     table.insert(Scene.modelList, terrainModel)
+    terrainModel.tintColor = {0.5, 0.5, 0.5}
 
     if wave then
         terrainModel.wave = wave

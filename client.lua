@@ -8,6 +8,7 @@ require "levels_tools.terrain"
 require "player"
 
 MAX_BULLETS = 200
+MAX_BULLET_DIST = 15.0
 
 function resetGame()
    BulletsVerts = {}
@@ -15,8 +16,18 @@ function resetGame()
    BulletsIdx = 1
    Players = {}
 
+   CurrentPlayer = {
+       angle = 0.0,
+       angleY = 0.0,
+       size = 0.5,
+       x = 0,
+       y = 0.5,
+       z = -1,
+   }
+
    local player = createPlayer()
    table.insert(Players, player)
+   table.insert(Players, CurrentPlayer)
 end
 
 
@@ -56,8 +67,8 @@ function love.load()
     addMountainRelative(0.5, 0.30, 3, 0.07)]]--
 
 
-    defaultSkybox = love.graphics.newImage("assets/levels/dark-skybox.png")
-    terrainImage = love.graphics.newImage("assets/levels/ground.png")
+    local defaultSkybox = love.graphics.newImage("assets/levels/dark-skybox.png")
+    local terrainImage = love.graphics.newImage("assets/levels/ground.png")
     skybox(defaultSkybox)
     terrain(terrainImage)
 
@@ -71,9 +82,12 @@ function love.load()
     resetGame()
 end
 
-function fireBullet()
-    fireSingleBullet(cameraPlaneVec(-0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
-    fireSingleBullet(cameraPlaneVec(0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
+function fireBullet(player)
+    local angle = player.angle
+    local angleY = player.angleY
+
+    fireSingleBullet(player.x, player.y, player.z, angle, angleY, planeVec(angle, -0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
+    fireSingleBullet(player.x, player.y, player.z, angle, angleY, planeVec(angle, 0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
 
     BulletsMesh = love.graphics.newMesh({
         {"VertexPosition", "float", 3},
@@ -81,17 +95,35 @@ function fireBullet()
     }, BulletsVerts, "triangles")
 end
 
-function fireSingleBullet(diff, yDiff, time)
-    local Camera = Engine.camera
-    local angle = Camera.angle.x
+function fireSingleBullet(originX, originY, originZ, angle, angleY, diff, yDiff, time)
+    local bulletVecX = math.cos(angle - math.pi/2) * math.cos(-angleY)
+    local bulletVecY = math.sin(-angleY)
+    local bulletVecZ = math.sin(angle - math.pi/2) * math.cos(-angleY)
 
-    local bulletVecX = math.cos(angle - math.pi/2) * math.cos(-Camera.angle.y)
-    local bulletVecY = math.sin(-Camera.angle.y)
-    local bulletVecZ = math.sin(angle - math.pi/2) * math.cos(-Camera.angle.y)
-    local dist = 10
+    local startVec = {originX + diff[1], originY + yDiff, originZ + diff[2]}
 
-    local startVec = {Camera.pos.x + diff[1], Camera.pos.y + yDiff, Camera.pos.z + diff[2]}
-    local endVec = {startVec[1] + bulletVecX * dist, startVec[2] + bulletVecY * dist, startVec[3] + bulletVecZ * dist}
+    local dist = 1.0
+    local endVec = {}
+
+    while dist < MAX_BULLET_DIST do
+        endVec = {startVec[1] + bulletVecX * dist, startVec[2] + bulletVecY * dist, startVec[3] + bulletVecZ * dist}
+
+        local isHit = false
+        for k,v in pairs(Players) do
+            if math.sqrt(math.pow(endVec[1] - v.x, 2.0) + math.pow(endVec[2] - v.y, 2.0) + math.pow(endVec[3] - v.z, 2.0)) < v.size then
+                playerHit(v)
+                isHit = true
+                break
+            end
+        end
+
+        if isHit then
+            break
+        end
+
+        dist = dist + 0.1
+    end
+
     local billboardVec = {0.0, 0.02, 0.0}
 
     table.insert(BulletsVerts, BulletsIdx, {startVec[1], startVec[2], startVec[3], time})
@@ -181,7 +213,7 @@ end
 
 function love.mousepressed( x, y, button, istouch, presses )
     if button == 1 then
-        fireBullet()
+        fireBullet(CurrentPlayer)
     end
 end
 
@@ -200,10 +232,7 @@ function love.keypressed(key)
     --local turnDirection = love.keyboard.isDown("left") and -1 or (love.keyboard.isDown("right") and 1 or 0)
 end
 
-function cameraPlaneVec(dx, dy)
-    local Camera = Engine.camera
-    local angle = Camera.angle.x
-
+function planeVec(angle, dx, dy)
     return {
         (math.cos(angle) * dx + math.cos(angle - math.pi/2) * dy),
         (math.sin(angle) * dx + math.sin(angle - math.pi/2) * dy),
@@ -232,8 +261,14 @@ function love.update(dt)
     Camera.pos.x = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * dt
     Camera.pos.z = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * dt
 
+    CurrentPlayer.x = Camera.pos.x
+    CurrentPlayer.z = Camera.pos.z
+
+    CurrentPlayer.angle = Camera.angle.x
+    CurrentPlayer.angleY = Camera.angle.y
+
     for k,v in pairs(Players) do
-        updatePlayerPosition(v)
+        updatePlayerPosition(dt, v)
     end
 end
 

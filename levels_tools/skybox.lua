@@ -72,5 +72,12 @@ function skybox(imageSkybox, lowY, top, fogAmount)
         {WorldSize, lowY + 0.1, -WorldSize - 0.1,                  0.5, 0.6666}
     }, imageSkybox, nil, fogAmount)
 
+    local color = {1.0, 0.0, 0.0}
+    front.tintColor = color
+    right.tintColor = color
+    back.tintColor = color
+    left.tintColor = color
+    top.tintColor = color
+    bottom.tintColor = color
     skyboxModels = {front, right, back, left, top, bottom}
 end

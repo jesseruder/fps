@@ -1,12 +1,24 @@
 
+function playerHit(player)
+    for k,v in pairs(player.models) do
+        v.tintColor = {1.0, 0.0, 0.0}
+    end
+
+    Scene:explosion(player.x, player.y, player.z)
+
+    player.tintCountdown = 0.1
+end
+
 function createPlayer()
     local Player = {
         color = {0.7, 0.7, 0.7},
-        size = 0.4,
+        size = 0.5,
         angle = 0.0,
+        angleY = 0.0,
         x = 0.0,
-        y = 0.2,
+        y = 0.5,
         z = 0.0,
+        isRendered = true,
     }
 
     local front = rectColor({
@@ -95,7 +107,11 @@ function createPlayer()
     return Player
 end
 
-function updatePlayerPosition(player)
+function updatePlayerPosition(dt, player)
+    if not player.isRendered then
+        return
+    end
+
     if not player.angleUp then
         player.angleUp = 0
     end
@@ -104,7 +120,16 @@ function updatePlayerPosition(player)
         player.angleSide = 0
     end
 
+    if player.tintCountdown and player.tintCountdown > 0.0 then
+        player.tintCountdown = player.tintCountdown - dt
+        if player.tintCountdown <= 0.0 then
+            for k,v in pairs(player.models) do
+                v.tintColor = nil
+            end
+        end
+    end
+
     for k,v in pairs(player.models) do
-        v:setTransform({player.x, player.size / 2.0 + player.y, player.z}, {-player.angle, cpml.vec3.unit_y, player.angleUp, cpml.vec3.unit_z, player.angleSide, cpml.vec3.unit_x})
+        v:setTransform({player.x, player.y, player.z}, {-player.angle, cpml.vec3.unit_y, player.angleUp, cpml.vec3.unit_z, player.angleSide, cpml.vec3.unit_x})
     end
 end
