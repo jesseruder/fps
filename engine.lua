@@ -452,7 +452,7 @@ function engine.newScene(renderWidth,renderHeight)
     scene.modelList = {}
 
     engine.camera = {
-        pos = cpml.vec3(0, 0.5, -1),
+        pos = cpml.vec3(0, 0.6, -1),
         angle = cpml.vec3(1, 0, 0),
         perspective = TransposeMatrix(cpml.mat4.from_perspective(60, renderWidth/renderHeight, 0.1, 10000)),
         transform = cpml.mat4(),
@@ -584,7 +584,11 @@ function engine.newScene(renderWidth,renderHeight)
         end
 
         -- anti alias and overlay
-        love.graphics.setColor(1,1,1)
+        if ScreenTint > 0.0 then
+            love.graphics.setColor(1,0,0)
+        else
+            love.graphics.setColor(1,1,1)
+        end
         love.graphics.setCanvas({self.postProcessingCanvas})
         love.graphics.setShader(self.postProcessingShader)
         self.postProcessingShader:send("xPixelSize", 1 / (520*2))

@@ -86,8 +86,8 @@ function fireBullet(player)
     local angle = player.angle
     local angleY = player.angleY
 
-    fireSingleBullet(player.x, player.y, player.z, angle, angleY, planeVec(angle, -0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
-    fireSingleBullet(player.x, player.y, player.z, angle, angleY, planeVec(angle, 0.2, 0.0), math.random() * 0.03 - 0.1, TimeElapsed + 0.1 * math.random())
+    fireSingleBullet(player.x, player.y, player.z, angle, angleY, planeVec(angle, -0.25, 0.0), math.random() * 0.03 + 0.1, TimeElapsed + 0.1 * math.random())
+    fireSingleBullet(player.x, player.y, player.z, angle, angleY, planeVec(angle, 0.25, 0.0), math.random() * 0.03 + 0.1, TimeElapsed + 0.1 * math.random())
 
     BulletsMesh = love.graphics.newMesh({
         {"VertexPosition", "float", 3},
@@ -254,6 +254,8 @@ function love.update(dt)
     else
         return
     end
+
+    ScreenTint = ScreenTint - dt
 
     local Camera = Engine.camera
     local angle = Camera.angle.x

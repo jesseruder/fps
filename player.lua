@@ -1,10 +1,14 @@
 
+ScreenTint = 0.0
+
 function playerHit(player)
     if player.models then
         for k,v in pairs(player.models) do
             v.tintColor = {1.0, 0.0, 0.0}
         end
         player.tintCountdown = 0.1
+    else
+        ScreenTint = 0.1
     end
 
     Scene:explosion(player.x, player.y, player.z)
@@ -70,7 +74,7 @@ function createPlayer()
     local pupilSize = 0.25
     local pupilDistFromSide = eyeDistFromSide + (eyeSize - pupilSize) * 0.5
     local pupilDistFromTop = eyeDistFromTop + (eyeSize - pupilSize) * 0.5
-    local eyeColor = {0.0, 0.0, 1.0}
+    local eyeColor = {0.0, 1.0, 0.0}
 
     local whiteVerts = {}
     local colorVerts = {}
@@ -137,6 +141,13 @@ function updatePlayerPosition(dt, player)
     if player.bulletCountdown < 0.0 then
         fireBullet(player)
         player.bulletCountdown = 1.0
+    end
+
+    local desiredAngle = math.atan2(CurrentPlayer.z - player.z, CurrentPlayer.x - player.x)
+    if desiredAngle > player.angle then
+        player.angle = player.angle + dt * 0.5
+    else
+        player.angle = player.angle - dt * 0.5
     end
 
     player.x = player.x + math.cos(player.angle) * dt * player.speed
