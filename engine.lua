@@ -204,6 +204,31 @@ function engine.newScene(renderWidth,renderHeight)
         scene.explosionParticles:setVertices(explosionParticleVerts)
     end
 
+    scene.smallExplosion = function (self, x, y, z)
+        for i = 1, 5 do
+            local rx = (math.random() - 0.5)
+            local ry = (math.random() - 0.5)
+            local rz = (math.random() - 0.5)
+
+            explosionParticleVerts[scene.currentExplosionIdx] = {
+                x + rx * EXPLOSION_START_DIST * 0.5,
+                y + ry * EXPLOSION_START_DIST * 0.5,
+                z + rz * EXPLOSION_START_DIST * 0.5,
+                x + rx * EXPLOSION_DIST * 0.5,
+                y + ry * EXPLOSION_DIST * 0.5,
+                z + rz * EXPLOSION_DIST * 0.5,
+                TimeElapsed + math.random() * 0.3,
+            }
+
+            scene.currentExplosionIdx = scene.currentExplosionIdx + 1
+            if scene.currentExplosionIdx >= 100000 then
+                scene.currentExplosionIdx = 1
+            end
+        end
+
+        scene.explosionParticles:setVertices(explosionParticleVerts)
+    end
+
     -- define the shaders used in rendering the scene
     scene.threeShader = love.graphics.newShader[[
         uniform mat4 view;

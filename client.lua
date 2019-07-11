@@ -4,6 +4,7 @@ Engine = require "engine"
 require "levels_tools.skybox"
 require "levels_tools.heightmap"
 require "levels_tools.terrain"
+require "levels_tools.walls"
 
 require "player"
 
@@ -72,6 +73,8 @@ function love.load()
     skybox(defaultSkybox)
     terrain(terrainImage)
 
+    makeWalls()
+
     --[[rectColor({
         {-1, -1, 1,   1,0},
         {-1, 1, 1,    1,1},
@@ -118,6 +121,11 @@ function fireSingleBullet(originX, originY, originZ, angle, angleY, diff, yDiff,
         end
 
         if isHit then
+            break
+        end
+
+        if isCoordWall(endVec[1], endVec[3]) then
+            Scene:smallExplosion(endVec[1], endVec[2], endVec[3])
             break
         end
 

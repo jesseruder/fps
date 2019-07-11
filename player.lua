@@ -13,6 +13,12 @@ function playerHit(player)
 
     Scene:explosion(player.x, player.y, player.z)
 
+    if player.health then
+        player.health = player.health - 1
+        if player.health == 0 then
+            player.isDead = true
+        end
+    end
 end
 
 function createPlayer()
@@ -24,6 +30,7 @@ function createPlayer()
         x = 0.0,
         y = 0.5,
         z = 0.0,
+        health = 10,
         speed = 0.2,
         bulletCountdown = 1.0,
         isRendered = true,
@@ -121,6 +128,15 @@ end
 
 function updatePlayerPosition(dt, player)
     if not player.isRendered then
+        return
+    end
+
+    if player.isDead then
+        player.y = -100
+        for k,v in pairs(player.models) do
+            v:setTransform({0, -100, 0}, {-player.angle, cpml.vec3.unit_y, player.angleUp, cpml.vec3.unit_z, player.angleSide, cpml.vec3.unit_x})
+        end
+
         return
     end
 
