@@ -2,3 +2,4 @@ main: entry-local.lua
 owner: jesse
 title: Tremble
 primaryColor: 89CFF0
+coverImage: assets/screenshot.png
