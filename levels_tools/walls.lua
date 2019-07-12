@@ -128,6 +128,7 @@ function getSpawnPoint()
 
     return {point[1] + (math.random() - 0.5) * WALL_SIZE, point[2] + (math.random() - 0.5) * WALL_SIZE}
 end
+WALLS = {}
 
 function makeWalls()
     for x=1, GRID_SIZE do
@@ -144,6 +145,10 @@ function makeWalls()
             local c = s:sub(x,x)
 
             if c == 'x' then
+                table.insert(WALLS, {
+                    x,
+                    z,
+                })
                 makeWall(x, z)
             end
 

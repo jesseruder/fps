@@ -340,6 +340,33 @@ function love.draw()
             love.graphics.line(GraphicsWidth / 2 + crosshairDistFromCenter + crosshairSize, GraphicsHeight / 2, GraphicsWidth / 2 + crosshairDistFromCenter, GraphicsHeight / 2)
             love.graphics.line(GraphicsWidth / 2, GraphicsHeight / 2 - crosshairDistFromCenter - crosshairSize, GraphicsWidth / 2, GraphicsHeight / 2 - crosshairDistFromCenter)
             love.graphics.line(GraphicsWidth / 2, GraphicsHeight / 2 + crosshairDistFromCenter + crosshairSize, GraphicsWidth / 2, GraphicsHeight / 2 + crosshairDistFromCenter)
+
+            local minimapSize = 150
+            local minimapPadding = 10
+            local minimapUnitSize = minimapSize / GRID_SIZE
+            local minimapLeft = minimapPadding
+            local minimapTop = GraphicsHeight - minimapPadding - minimapSize
+
+            love.graphics.setColor(0.7, 0.7, 0.7, 0.5)
+            love.graphics.rectangle('fill', minimapLeft, minimapTop, minimapSize, minimapSize)
+
+            love.graphics.setColor(0.9, 0.9, 0.9, 0.9)
+            -- draw walls
+            for k,v in pairs(WALLS) do
+                love.graphics.rectangle('fill', minimapLeft + v[1] * minimapUnitSize, minimapTop + v[2] * minimapUnitSize, minimapUnitSize, minimapUnitSize)
+            end
+
+            -- enemies
+            love.graphics.setColor(1.0, 0.0, 0.0, 0.9)
+            for k,v in pairs(Players) do
+                love.graphics.rectangle('fill', minimapLeft + ((v.x / WALL_SIZE) + GRID_SIZE / 2 - 0.5) * minimapUnitSize, minimapTop + ((v.z / WALL_SIZE) + GRID_SIZE / 2 - 0.5) * minimapUnitSize, minimapUnitSize, minimapUnitSize)
+            end
+
+            -- draw user
+            love.graphics.setColor(0.0, 0.0, 1.0, 0.9)
+            love.graphics.rectangle('fill', minimapLeft + ((CurrentPlayer.x / WALL_SIZE) + GRID_SIZE / 2 - 0.5) * minimapUnitSize, minimapTop + ((CurrentPlayer.z / WALL_SIZE) + GRID_SIZE / 2 - 0.5) * minimapUnitSize, minimapUnitSize, minimapUnitSize)
+
+            love.graphics.setColor(1, 1, 1, 1)
         end, true
     )
 end
