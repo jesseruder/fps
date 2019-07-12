@@ -9,6 +9,15 @@ function playerHit(player)
         player.tintCountdown = 0.1
     else
         ScreenTint = 0.1
+        CURRENT_PLAYER_HEALTH = CURRENT_PLAYER_HEALTH - 1
+
+        if CURRENT_PLAYER_HEALTH <= 0 then
+            CURRENT_PLAYER_HEALTH = INITIAL_CURRENT_PLAYER_HEALTH
+            SCORE = SCORE - PENALTY_FOR_DYING
+            if SCORE < 0 then
+                SCORE = 0
+            end
+        end
     end
 
     Scene:explosion(player.x, player.y, player.z)
@@ -17,6 +26,7 @@ function playerHit(player)
         player.health = player.health - 1
         if player.health == 0 then
             player.isDead = true
+            SCORE = SCORE + 1
         end
     end
 end

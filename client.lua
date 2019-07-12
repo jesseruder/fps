@@ -18,6 +18,11 @@ ENEMY_ROTATION_SPEED = 0.8
 NUM_ENEMIES = 10
 STARTING_HEALTH = 10
 
+SCORE = 0
+INITIAL_CURRENT_PLAYER_HEALTH = 100
+CURRENT_PLAYER_HEALTH = INITIAL_CURRENT_PLAYER_HEALTH
+PENALTY_FOR_DYING = 20
+
 function resetGame()
     BulletsVerts = {}
     BulletsMesh = nil
@@ -55,6 +60,10 @@ function love.load()
     love.graphics.setDefaultFilter("linear", "linear")
     love.graphics.setLineStyle("rough")
     -- love.window.setMode(GraphicsWidth,GraphicsHeight, {vsync = -1, msaa = 8})
+
+    BigFont = love.graphics.newFont(20)
+    HugeFont = love.graphics.newFont(100)
+    DefaultFont = love.graphics.getFont()
 
     love.graphics.setCanvas()
     DX = 0
@@ -326,10 +335,28 @@ function love.draw()
     -- draw HUD
     Scene:renderFunction(
         function ()
+            love.graphics.setFont(DefaultFont)
             love.graphics.setColor(FontColor[1], FontColor[2], FontColor[3], 1)
             love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 20)
-            love.graphics.print("[c] to capture or release mouse input", GraphicsWidth - 350, 20)
+            love.graphics.print("[c] to capture or release mouse", 20, 40)
+
+            love.graphics.setFont(BigFont)
+            love.graphics.setColor(0.9, 0.9, 0.9, 1)
+            love.graphics.print("Score: " .. SCORE, GraphicsWidth - 150, GraphicsHeight - 40)
             
+
+            local healthBarWidth = 150
+            local healthBarHeight = 20
+            local healthBarTop = 20
+            local healthBarLeft = GraphicsWidth - healthBarWidth - 20
+            local percentHealth = CURRENT_PLAYER_HEALTH / INITIAL_CURRENT_PLAYER_HEALTH
+
+            love.graphics.setColor(0, 1, 0, 1)
+            love.graphics.rectangle('fill', healthBarLeft, healthBarTop, healthBarWidth * percentHealth, healthBarHeight)
+            love.graphics.setColor(1, 0, 0, 1)
+            love.graphics.rectangle('fill', healthBarLeft + healthBarWidth * percentHealth, healthBarTop, healthBarWidth * (1.0 - percentHealth), healthBarHeight)
+
+
             love.graphics.setColor(1, 1, 1, 1)
 
             local crosshairSize = 30
