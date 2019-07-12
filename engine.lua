@@ -173,6 +173,7 @@ function engine.newScene(renderWidth,renderHeight)
         {"VertexPosition", "float", 3},
         {"endPosition", "float", 3},
         {"startTime", "float", 1},
+        {"explosionSize", "float", 1}
     }, explosionParticleVerts, "points")
     scene.explosionParticles:setTexture(love.graphics.newImage("assets/explosion.png"))
     scene.currentExplosionIdx = 1
@@ -193,6 +194,7 @@ function engine.newScene(renderWidth,renderHeight)
                 y + ry * EXPLOSION_DIST,
                 z + rz * EXPLOSION_DIST,
                 TimeElapsed + math.random() * 0.3,
+                8.0,
             }
 
             scene.currentExplosionIdx = scene.currentExplosionIdx + 1
@@ -205,19 +207,20 @@ function engine.newScene(renderWidth,renderHeight)
     end
 
     scene.smallExplosion = function (self, x, y, z)
-        for i = 1, 5 do
+        for i = 1, 3 do
             local rx = (math.random() - 0.5)
             local ry = (math.random() - 0.5)
             local rz = (math.random() - 0.5)
 
             explosionParticleVerts[scene.currentExplosionIdx] = {
-                x + rx * EXPLOSION_START_DIST * 0.5,
-                y + ry * EXPLOSION_START_DIST * 0.5,
-                z + rz * EXPLOSION_START_DIST * 0.5,
-                x + rx * EXPLOSION_DIST * 0.5,
-                y + ry * EXPLOSION_DIST * 0.5,
-                z + rz * EXPLOSION_DIST * 0.5,
+                x + rx * EXPLOSION_START_DIST * 0.2,
+                y + ry * EXPLOSION_START_DIST * 0.2,
+                z + rz * EXPLOSION_START_DIST * 0.2,
+                x + rx * EXPLOSION_DIST * 0.2,
+                y + ry * EXPLOSION_DIST * 0.2,
+                z + rz * EXPLOSION_DIST * 0.2,
                 TimeElapsed + math.random() * 0.3,
+                0.5,
             }
 
             scene.currentExplosionIdx = scene.currentExplosionIdx + 1
@@ -326,10 +329,12 @@ function engine.newScene(renderWidth,renderHeight)
         uniform vec3 cameraPos;
         varying float dist;
         varying float percentDone;
+        varying float explosionSizeV;
 
         #ifdef VERTEX
         attribute vec3 endPosition;
         attribute float startTime;
+        attribute float explosionSize;
 
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
             if (time - startTime > 0.5) {
@@ -342,6 +347,7 @@ function engine.newScene(renderWidth,renderHeight)
 
             dist = length(vec3(pos.x, pos.y, pos.z) - cameraPos);
             percentDone = percent;
+            explosionSizeV = explosionSize;
 
             vec4 result = view * pos;
             return result;
@@ -352,7 +358,7 @@ function engine.newScene(renderWidth,renderHeight)
         vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
             vec2 coord = gl_PointCoord - vec2(0.5);
             float radius = 0.5;
-            radius = 8 * radius / dist;
+            radius = explosionSizeV * radius / dist;
 
             if (radius > 0.5) {
                 radius = 0.5;

@@ -98,6 +98,29 @@ function fireBullet(player)
     }, BulletsVerts, "triangles")
 end
 
+function canSeeCurrentPlayerFrom(x, z)
+    local startVec = {x, z}
+    local endVec = {CurrentPlayer.x, CurrentPlayer.z}
+
+    local diffVec = {endVec[1] - startVec[1], endVec[2] - startVec[2]}
+    local fullDist = math.sqrt(diffVec[1] * diffVec[1] + diffVec[2] * diffVec[2])
+    diffVec[1] = diffVec[1] / fullDist
+    diffVec[2] = diffVec[2] / fullDist
+
+    local dist = 0.0
+    while dist <= fullDist do
+        local currentPos = {startVec[1] + diffVec[1] * dist, startVec[2] + diffVec[2] * dist}
+
+        dist = dist + 0.25
+
+        if isCoordWall(currentPos[1], currentPos[2]) then
+            return false
+        end
+    end
+
+    return true
+end
+
 function fireSingleBullet(originX, originY, originZ, angle, angleY, diff, yDiff, time)
     local bulletVecX = math.cos(angle) * math.cos(-angleY)
     local bulletVecY = math.sin(-angleY)
@@ -124,7 +147,7 @@ function fireSingleBullet(originX, originY, originZ, angle, angleY, diff, yDiff,
             break
         end
 
-        if isCoordWall(endVec[1], endVec[3]) then
+        if isCoordWall(endVec[1], endVec[3]) or endVec[2] < 0.0 then
             Scene:smallExplosion(endVec[1], endVec[2], endVec[3])
             break
         end
@@ -268,8 +291,13 @@ function love.update(dt)
     local Camera = Engine.camera
     local angle = Camera.angle.x
 
-    Camera.pos.x = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * dt
-    Camera.pos.z = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * dt
+    local nextX = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * 0.7
+    local nextZ = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * 0.7
+
+    if not isCoordWall(nextX, nextZ) then
+        Camera.pos.x = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * dt
+        Camera.pos.z = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * dt
+    end
 
     CurrentPlayer.x = Camera.pos.x
     CurrentPlayer.z = Camera.pos.z

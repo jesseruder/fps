@@ -178,8 +178,17 @@ function updatePlayerPosition(dt, player)
         player.angle = player.angle - dt * 0.5
     end
 
-    player.x = player.x + math.cos(player.angle) * dt * player.speed
-    player.z = player.z + math.sin(player.angle) * dt * player.speed
+    local nextX = player.x + math.cos(player.angle) * 0.7
+    local nextZ = player.z + math.sin(player.angle) * 0.7
+
+    if not isCoordWall(nextX, nextZ) then
+        player.x = player.x + math.cos(player.angle) * dt * player.speed
+        player.z = player.z + math.sin(player.angle) * dt * player.speed
+    end
+
+    if canSeeCurrentPlayerFrom(player.x, player.z) then
+    else
+    end
 
     for k,v in pairs(player.models) do
         v:setTransform({player.x, player.y, player.z}, {-player.angle, cpml.vec3.unit_y, player.angleUp, cpml.vec3.unit_z, player.angleSide, cpml.vec3.unit_x})
