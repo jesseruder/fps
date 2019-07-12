@@ -11,24 +11,34 @@ require "player"
 MAX_BULLETS = 200
 MAX_BULLET_DIST = 15.0
 
+MY_SPEED = 3
+ENEMY_SPEED = 2
+ENEMY_ROTATION_SPEED = 0.8
+
+NUM_ENEMIES = 10
+STARTING_HEALTH = 10
+
 function resetGame()
-   BulletsVerts = {}
-   BulletsMesh = nil
-   BulletsIdx = 1
-   Players = {}
+    BulletsVerts = {}
+    BulletsMesh = nil
+    BulletsIdx = 1
+    Players = {}
 
-   CurrentPlayer = {
-       angle = 0.0,
-       angleY = 0.0,
-       size = 0.5,
-       x = 0,
-       y = 0.5,
-       z = -1,
-   }
+    CurrentPlayer = {
+        angle = 0.0,
+        angleY = 0.0,
+        size = 0.5,
+        x = CURRENT_SPAWN_X,
+        y = 0.5,
+        z = CURRENT_SPAWN_Z,
+    }
 
-   local player = createPlayer()
-   table.insert(Players, player)
-   table.insert(Players, CurrentPlayer)
+    table.insert(Players, CurrentPlayer)
+
+    for i = 1, NUM_ENEMIES do
+        local player = createPlayer()
+        table.insert(Players, player)
+    end
 end
 
 
@@ -295,8 +305,8 @@ function love.update(dt)
     local nextZ = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * 0.7
 
     if not isCoordWall(nextX, nextZ) then
-        Camera.pos.x = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * dt
-        Camera.pos.z = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * dt
+        Camera.pos.x = Camera.pos.x + (math.cos(angle) * DX + math.cos(angle - math.pi/2) * DY) * dt * MY_SPEED
+        Camera.pos.z = Camera.pos.z + (math.sin(angle) * DX + math.sin(angle - math.pi/2) * DY) * dt * MY_SPEED
     end
 
     CurrentPlayer.x = Camera.pos.x

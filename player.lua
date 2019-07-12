@@ -1,6 +1,5 @@
 
 ScreenTint = 0.0
-STARTING_HEALTH = 10
 
 function playerHit(player)
     if player.models then
@@ -23,16 +22,18 @@ function playerHit(player)
 end
 
 function createPlayer()
+    local spawn = getSpawnPoint()
+
     local Player = {
         color = {0.7, 0.7, 0.7},
         size = 0.5,
         angle = 0.0,
         angleY = 0.0,
-        x = 0.0,
+        x = spawn[1],
         y = 0.5,
-        z = 0.0,
+        z = spawn[2],
         health = STARTING_HEALTH,
-        speed = 0.2,
+        speed = ENEMY_SPEED,
         bulletCountdown = 1.0,
         isRendered = true,
     }
@@ -136,8 +137,9 @@ function updatePlayerPosition(dt, player)
         player.isDead = false
         player.health = STARTING_HEALTH
 
-        player.x = 0
-        player.z = 0
+        local spawn = getSpawnPoint()
+        player.x = spawn[1]
+        player.z = spawn[2]
         player.angle = 0.0
         player.angleY = 0.0
     end
@@ -160,14 +162,15 @@ function updatePlayerPosition(dt, player)
     end
 
     player.bulletCountdown = player.bulletCountdown - dt
-    if player.bulletCountdown < 0.0 then
-        fireBullet(player)
-        player.bulletCountdown = 1.0
-    end
 
     local desiredAngle = 0
     if canSeeCurrentPlayerFrom(player.x, player.z) then
         desiredAngle = math.atan2(CurrentPlayer.z - player.z, CurrentPlayer.x - player.x)
+
+        if player.bulletCountdown < 0.0 then
+            fireBullet(player)
+            player.bulletCountdown = 1.0
+        end
     else
         local goalCoords = getPath(player.x, player.z, CurrentPlayer.x, CurrentPlayer.z)
         desiredAngle = math.atan2(goalCoords.nextZ - player.z, goalCoords.nextX - player.x)
@@ -182,9 +185,9 @@ function updatePlayerPosition(dt, player)
     end
 
     if diffAngle > 0 then
-        player.angle = player.angle + dt * 0.5
+        player.angle = player.angle + dt * ENEMY_ROTATION_SPEED
     else
-        player.angle = player.angle - dt * 0.5
+        player.angle = player.angle - dt * ENEMY_ROTATION_SPEED
     end
 
     local nextX = player.x + math.cos(player.angle) * 0.7

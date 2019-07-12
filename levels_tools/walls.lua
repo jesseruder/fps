@@ -1,8 +1,31 @@
 
 WALL_SIZE = 2.0
-GRID_SIZE = 40
+GRID_SIZE = 22
 ORIGIN_OFFSET = -GRID_SIZE / 2.0
 GRID = {}
+
+LEVEL = [[
+xxxxxxxxxxxxxxxxxxxx
+x             x    x
+x    xxxxx    x    x
+x    x           xxx
+xx  xx  o          x
+x   xx        x    x
+x   xxxxxx    x    x
+x   xxxxxxx   x o  x
+x             x    x
+x   xx        xxx  x
+x   xx   p xxxx    x
+x                  x
+xxx   x     xx     x
+x               x  x
+x     xxxxx     x  x
+x   xxxx        x  x
+x    x       xxxx  x
+x    x   x         x
+x    o   x   o     x
+xxxxxxxxxxxxxxxxxxxx
+]]
 
 function getPath(startX, startZ, endX, endZ)
     local worldSize = (GRID_SIZE / 2.0) * WALL_SIZE
@@ -27,7 +50,9 @@ end
 function search(sx, sz, ex, ez, cache, recursiveDepth)
     local cacheKey = sx .. '-' .. sz
 
-    if sx == ex and sz == ez then
+    local worldSx = (sx + ORIGIN_OFFSET + 0.5) * WALL_SIZE
+    local worldSz = (sz + ORIGIN_OFFSET + 0.5) * WALL_SIZE
+    if (sx == ex and sz == ez) or canSeeCurrentPlayerFrom(worldSx, worldSz) then
         return {
             depth = 0,
             dx = 0,
@@ -97,6 +122,13 @@ function isCoordWall(x, z)
     return GRID[xgrid][zgrid]
 end
 
+SPAWN_POINTS = {}
+function getSpawnPoint()
+    local point = SPAWN_POINTS[1 + math.floor(math.random() * #SPAWN_POINTS)]
+
+    return {point[1] + (math.random() - 0.5) * WALL_SIZE, point[2] + (math.random() - 0.5) * WALL_SIZE}
+end
+
 function makeWalls()
     for x=1, GRID_SIZE do
         table.insert(GRID, {})
@@ -106,9 +138,27 @@ function makeWalls()
         end
     end
 
-    makeWall(25, 25)
-    makeWall(21, 21)
-    makeWall(20, 21)
+    z = 1
+    for s in LEVEL:gmatch("[^\r\n]+") do
+        for x = 1, #s do
+            local c = s:sub(x,x)
+
+            if c == 'x' then
+                makeWall(x, z)
+            end
+
+            if c == 'p' then
+                CURRENT_SPAWN_X = (x + ORIGIN_OFFSET + 0.5) * WALL_SIZE
+                CURRENT_SPAWN_Z = (z + ORIGIN_OFFSET + 0.5) * WALL_SIZE
+            end
+
+            if c == 'o' then
+                table.insert(SPAWN_POINTS, {(x + ORIGIN_OFFSET + 0.5) * WALL_SIZE, (z + ORIGIN_OFFSET + 0.5) * WALL_SIZE})
+            end
+        end
+
+        z = z + 1
+    end
 
 
     TEST_WALL = rectColor({
