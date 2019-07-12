@@ -1,5 +1,6 @@
 
 ScreenTint = 0.0
+STARTING_HEALTH = 10
 
 function playerHit(player)
     if player.models then
@@ -30,7 +31,7 @@ function createPlayer()
         x = 0.0,
         y = 0.5,
         z = 0.0,
-        health = 10,
+        health = STARTING_HEALTH,
         speed = 0.2,
         bulletCountdown = 1.0,
         isRendered = true,
@@ -132,12 +133,13 @@ function updatePlayerPosition(dt, player)
     end
 
     if player.isDead then
-        player.y = -100
-        for k,v in pairs(player.models) do
-            v:setTransform({0, -100, 0}, {-player.angle, cpml.vec3.unit_y, player.angleUp, cpml.vec3.unit_z, player.angleSide, cpml.vec3.unit_x})
-        end
+        player.isDead = false
+        player.health = STARTING_HEALTH
 
-        return
+        player.x = 0
+        player.z = 0
+        player.angle = 0.0
+        player.angleY = 0.0
     end
 
     if not player.angleUp then
@@ -163,7 +165,14 @@ function updatePlayerPosition(dt, player)
         player.bulletCountdown = 1.0
     end
 
-    local desiredAngle = math.atan2(CurrentPlayer.z - player.z, CurrentPlayer.x - player.x)
+    local desiredAngle = 0
+    if canSeeCurrentPlayerFrom(player.x, player.z) then
+        desiredAngle = math.atan2(CurrentPlayer.z - player.z, CurrentPlayer.x - player.x)
+    else
+        local goalCoords = getPath(player.x, player.z, CurrentPlayer.x, CurrentPlayer.z)
+        desiredAngle = math.atan2(goalCoords.nextZ - player.z, goalCoords.nextX - player.x)
+    end
+
     local diffAngle = desiredAngle - normalizeAngle(player.angle)
 
     if math.abs(diffAngle - math.pi * 2.0) < math.abs(diffAngle) then
@@ -184,10 +193,6 @@ function updatePlayerPosition(dt, player)
     if not isCoordWall(nextX, nextZ) then
         player.x = player.x + math.cos(player.angle) * dt * player.speed
         player.z = player.z + math.sin(player.angle) * dt * player.speed
-    end
-
-    if canSeeCurrentPlayerFrom(player.x, player.z) then
-    else
     end
 
     for k,v in pairs(player.models) do
