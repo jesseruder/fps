@@ -297,7 +297,7 @@ function engine.newScene(renderWidth,renderHeight)
             vec4 p = vertex_position;
             p.y = p.y - time * 0.015;
             p.y = mod(p.y, 1.0);
-            p.y = p.y * 100 - 50;
+            p.y = p.y * 100.0 - 50.0;
             vec4 result = view * p;
             dist = length(result.xyz);
             return result;
@@ -308,7 +308,7 @@ function engine.newScene(renderWidth,renderHeight)
         vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
             vec2 coord = gl_PointCoord - vec2(0.5);
             float radius = 0.5;
-            radius = 10 * radius / dist;
+            radius = 10.0 * radius / dist;
 
             if (radius > 0.5) {
                 radius = 0.5;
@@ -372,14 +372,14 @@ function engine.newScene(renderWidth,renderHeight)
 
             float idx = floor(percentDone * 16.0);
             float percentToNextIdx = percentDone * 16.0 - idx;
-            float xAsset = idx - 4 * floor(idx / 4.0);
+            float xAsset = idx - 4.0 * floor(idx / 4.0);
             float yAsset = floor(idx / 4.0);
-            float nextIdx = idx + 1;
-            if (nextIdx > 15) {
-                nextIdx = 15;
+            float nextIdx = idx + 1.0;
+            if (nextIdx > 15.0) {
+                nextIdx = 15.0;
             }
 
-            float xAssetNext = nextIdx - 4 * floor(nextIdx / 4.0);
+            float xAssetNext = nextIdx - 4.0 * floor(nextIdx / 4.0);
             float yAssetNext = floor(nextIdx / 4.0);
 
             vec4 currentColor = Texel(texture, vec2(percentX, percentY) * vec2(0.25, 0.25) + vec2(0.25 * xAsset, 0.25 * yAsset));
@@ -404,7 +404,7 @@ function engine.newScene(renderWidth,renderHeight)
         
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
             float elapsedTime = time - startTime;
-            if (elapsedTime > 0.015 || mod(elapsedTime * 10, 1.0) > 0.5) {
+            if (elapsedTime > 0.015 || mod(elapsedTime * 10.0, 1.0) > 0.5) {
                 return vec4(2.0, 2.0, 0.0, 1.0);
             }
 
@@ -432,10 +432,10 @@ function engine.newScene(renderWidth,renderHeight)
 
         vec4 blurColor(Image texture, vec2 texture_coords, float size)
         {
-            vec4 l = Texel(texture, texture_coords - vec2(xPixelSize * size, 0));
-            vec4 r = Texel(texture, texture_coords + vec2(xPixelSize * size, 0));
-            vec4 t = Texel(texture, texture_coords - vec2(0, yPixelSize * size));
-            vec4 b = Texel(texture, texture_coords + vec2(0, yPixelSize * size));
+            vec4 l = Texel(texture, texture_coords - vec2(xPixelSize * size, 0.0));
+            vec4 r = Texel(texture, texture_coords + vec2(xPixelSize * size, 0.0));
+            vec4 t = Texel(texture, texture_coords - vec2(0.0, yPixelSize * size));
+            vec4 b = Texel(texture, texture_coords + vec2(0.0, yPixelSize * size));
             return (l + r + t + b) / 4.0;
         }
 
@@ -444,7 +444,7 @@ function engine.newScene(renderWidth,renderHeight)
             vec4 outColor;
         
             vec4 o = Texel(texture, texture_coords);
-            outColor = (o * 2 + blurColor(texture, texture_coords, 1)) / 3.0;
+            outColor = (o * 2.0 + blurColor(texture, texture_coords, 1.0)) / 3.0;
             
             return outColor * overlayOpacity + vec4(0.0, 0.0, 0.0, 1.0) * (1.0 - overlayOpacity);
         }
