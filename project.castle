@@ -1,4 +1,4 @@
-main: entry-local.lua
+main: client.lua
 owner: jesse
-title: FPS
+title: 3D
 primaryColor: 89CFF0
