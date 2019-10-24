@@ -33,18 +33,18 @@ end
 
 4     3
 ]]--
-function rect(coords, texture, scale, fogAmount)
-    local model = Engine.newModel({ coords[1], coords[2], coords[4], coords[2], coords[3], coords[4] }, texture, nil, nil, nil, scale, fogAmount)
+function rect(coords, texture, scale)
+    local model = Engine.newModel({ coords[1], coords[2], coords[4], coords[2], coords[3], coords[4] }, texture, nil, nil, nil, scale)
     table.insert(Scene.modelList, model)
     return model
 end
-function modelFromCoords(coords, texture, scale, fogAmount)
-    local model = Engine.newModel(coords, texture, nil, nil, nil, scale, fogAmount)
+function modelFromCoords(coords, texture, scale)
+    local model = Engine.newModel(coords, texture, nil, nil, nil, scale)
     table.insert(Scene.modelList, model)
     return model
 end
 
-function modelFromCoordsColor(coords, color, scale, fogAmount)
+function modelFromCoordsColor(coords, color, scale)
     local model = Engine.newModel(coords, nil, nil, color, { 
         {"VertexPosition", "float", 3}, 
     }, scale)
@@ -88,7 +88,7 @@ end
 
 function love.update(dt)
     TimeElapsed = TimeElapsed + dt
-    -- Scene:basicCamera(dt)
+    Scene:basicCamera(dt)
     
     LogicAccumulator = LogicAccumulator+dt
 

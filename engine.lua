@@ -17,7 +17,7 @@ engine.objFormat = {
 -- each vert is its own table that contains three coordinate numbers, and may contain 2 extra numbers as uv coordinates
 -- another example, this with uvs: { {0,0,0, 0,0}, {0,1,0, 1,0}, {0,0,1, 0,1} }
 -- polygons are automatically created with three consecutive verts
-function engine.newModel(verts, texture, coords, color, format, scale, fogAmount)
+function engine.newModel(verts, texture, coords, color, format, scale)
     local m = {}
 
     -- default values if no arguments are given
@@ -80,7 +80,6 @@ function engine.newModel(verts, texture, coords, color, format, scale, fogAmount
     m.dead = false
     m.wireframe = false
     m.culling = false
-    m.fogAmount = fogAmount
 
     m.setVerts = function (self, verts)
         if #verts > 0 then
@@ -227,12 +226,12 @@ function engine.newScene(renderWidth, renderHeight)
         local pos = Camera.pos
         
         local mul = love.keyboard.isDown("w") and 1 or (love.keyboard.isDown("s") and -1 or 0)
-        pos.x = pos.x + math.sin(-Camera.angle.x) * mul * speed
-        pos.z = pos.z + math.cos(-Camera.angle.x) * mul * speed
+        pos.x = pos.x + math.sin(math.pi - Camera.angle.x) * mul * speed
+        pos.z = pos.z + math.cos(math.pi - Camera.angle.x) * mul * speed
         
         local mul = love.keyboard.isDown("d") and -1 or (love.keyboard.isDown("a") and 1 or 0)
-        pos.x = pos.x + math.cos(Camera.angle.x) * mul * speed
-        pos.z = pos.z + math.sin(Camera.angle.x) * mul * speed
+        pos.x = pos.x + math.cos(math.pi + Camera.angle.x) * mul * speed
+        pos.z = pos.z + math.sin(math.pi + Camera.angle.x) * mul * speed
 
         local mul = love.keyboard.isDown("lshift") and 1 or (love.keyboard.isDown("space") and -1 or 0)
         pos.y = pos.y + mul * speed
