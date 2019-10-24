@@ -1,5 +1,6 @@
 -- Super Simple 3D Engine v1
 -- groverburger 2019
+-- https://raw.githubusercontent.com/groverburger/ss3d/master/engine.lua
 
 cpml = require "cpml"
 
@@ -141,7 +142,7 @@ function engine.newModel(verts, texture, coords, color, format, scale, fogAmount
 end
 
 -- create a new Scene object with given canvas output size
-function engine.newScene(renderWidth,renderHeight)
+function engine.newScene(renderWidth, renderHeight)
 	love.graphics.setDepthMode("lequal", true)
     local scene = {}
 
@@ -161,23 +162,11 @@ function engine.newScene(renderWidth,renderHeight)
     scene.threeShader = love.graphics.newShader[[
         uniform mat4 view;
         uniform mat4 model_matrix;
-        uniform float fog_amt;
-        uniform float fog_startDist;
-        uniform float fog_divide;
-        uniform float wave;
-        uniform float time;
-        uniform vec4 fogColor;
-        varying float fogDistance;
 
         #ifdef VERTEX
         vec4 position(mat4 transform_projection, vec4 vertex_position) {
             vec4 p = vertex_position;
-            if (wave > 0.0) {
-                p.y = p.y + 0.1 * sin(time * 0.5 + p.z * 0.7) + 0.1 * sin(time * 0.7 + 1.0 + p.x * 1.2);
-            }
-
             vec4 result = view * model_matrix * p;
-            fogDistance = length(result.xyz);
             return result;
         }
         #endif
@@ -185,111 +174,15 @@ function engine.newScene(renderWidth,renderHeight)
         #ifdef PIXEL
         vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
             vec2 coords = texture_coords;
-            if (wave > 0.0) {
-                coords = coords + vec2(0.1 * sin(time + coords.y), 0.1 * sin(time * 0.3 + 1.0 + coords.x * 2.0));
-            }
 
             vec4 texturecolor = Texel(texture, coords);
-            //if the alpha here is close to zero just don't draw anything here
+            // if the alpha here is close to zero just don't draw anything here
             if (texturecolor.a == 0.0)
             {
                 discard;
             }
 
-            float fogAmount = 0.0;
-            if (fogDistance > fog_startDist) {
-                // start fog
-                fogAmount = (fogDistance - fog_startDist) / fog_divide;
-                if (fogAmount > 0.7) {
-                    fogAmount = 0.7;
-                }
-                fogAmount = fogAmount * fog_amt;
-            }
-
-            return (color*texturecolor*(1.0 - fogAmount)) + (fogColor * fogAmount);
-        }
-        #endif
-    ]]
-
-    scene.particleShader = love.graphics.newShader[[
-        uniform mat4 view;
-        uniform float time;
-        varying float dist;
-
-        #ifdef VERTEX
-        vec4 position(mat4 transform_projection, vec4 vertex_position) {
-            vec4 p = vertex_position;
-            p.y = p.y - time * 0.015;
-            p.y = mod(p.y, 1.0);
-            p.y = p.y * 100 - 50;
-            vec4 result = view * p;
-            dist = length(result.xyz);
-            return result;
-        }
-        #endif
-
-        #ifdef PIXEL
-        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
-            vec2 coord = gl_PointCoord - vec2(0.5);
-            float radius = 0.5;
-            radius = 10 * radius / dist;
-
-            if (radius > 0.5) {
-                radius = 0.5;
-            }
-
-            if(length(coord) > radius)
-                discard;
-            return vec4(1.0,1.0,1.0,0.8);
-        }
-        #endif
-    ]]
-
-    scene.postProcessingShader = love.graphics.newShader[[
-        #ifdef VERTEX
-        #endif
-
-        #ifdef PIXEL
-        uniform float xPixelSize;
-        uniform float yPixelSize;
-        uniform float overlayOpacity;
-
-        vec4 blurColor(Image texture, vec2 texture_coords, float size)
-        {
-            vec4 l = Texel(texture, texture_coords - vec2(xPixelSize * size, 0));
-            vec4 r = Texel(texture, texture_coords + vec2(xPixelSize * size, 0));
-            vec4 t = Texel(texture, texture_coords - vec2(0, yPixelSize * size));
-            vec4 b = Texel(texture, texture_coords + vec2(0, yPixelSize * size));
-            return (l + r + t + b) / 4.0;
-        }
-
-        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
-        {
-            vec4 outColor;
-        
-            vec4 o = Texel(texture, texture_coords);
-            outColor = (o * 2 + blurColor(texture, texture_coords, 1)) / 3.0;
-            
-            return outColor * overlayOpacity + vec4(0.0, 0.0, 0.0, 1.0) * (1.0 - overlayOpacity);
-        }
-        #endif
-    ]]
-
-    scene.motionBlurShader = love.graphics.newShader[[
-        #ifdef VERTEX
-        #endif
-
-        #ifdef PIXEL
-        uniform Image oldCanvas;
-        uniform float amount;
-
-        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
-        {
-            vec4 o = Texel(texture, texture_coords);
-            // smear down
-            vec4 old = Texel(oldCanvas, texture_coords + vec2(0.0, -0.003));
-
-            return o * (1.0 - amount) + old * amount;
+            return color * texturecolor;
         }
         #endif
     ]]
@@ -299,9 +192,6 @@ function engine.newScene(renderWidth,renderHeight)
 
     -- create a canvas that will store the rendered 3d scene
     scene.threeCanvas = love.graphics.newCanvas(renderWidth, renderHeight)
-    scene.postProcessingCanvas = love.graphics.newCanvas(renderWidth, renderHeight)
-    scene.motionBlurCanvas = love.graphics.newCanvas(renderWidth, renderHeight)
-    scene.motionBlurCanvasOld = love.graphics.newCanvas(renderWidth, renderHeight)
     -- create a canvas that will store a 2d layer that can be drawn on top of the 3d scene
     scene.twoCanvas = love.graphics.newCanvas(renderWidth, renderHeight)
     scene.modelList = {}
@@ -378,20 +268,7 @@ function engine.newScene(renderWidth,renderHeight)
             local model = self.modelList[i]
             if model ~= nil and model.visible and #model.verts > 0 then
                 self.threeShader:send("model_matrix", model.transform)
-                local fogAmount = 1.0
-                if model.fogAmount then
-                    fogAmount = model.fogAmount
-                end
-                self.threeShader:send("fog_amt", fogAmount)
-                self.threeShader:send("fog_divide", FogDivide)
-                self.threeShader:send("fog_startDist", FogStartDist)
-                self.threeShader:send("fogColor", FogColor)
-                local wave = 0.0
-                if model.wave then
-                    wave = 1.0
-                end
-                self.threeShader:send("wave", wave)
-                self.threeShader:send("time", timeElapsed)
+
                 -- need the inverse to compute normals when model is rotated
                 --self.threeShader:send("model_matrix_inverse", TransposeMatrix(InvertMatrix(model.transform)))
                 love.graphics.setWireframe(model.wireframe)
@@ -404,64 +281,11 @@ function engine.newScene(renderWidth,renderHeight)
             end
         end
 
-        if self.particles and PARTICLES_ENABLED then
-            love.graphics.setShader(self.particleShader)
-            self.particleShader:send("time", timeElapsed)
-            self.particleShader:send("view", Camera.perspective * TransposeMatrix(Camera.transform))
-            love.graphics.setPointSize(20)
-            love.graphics.draw(self.particles, -self.renderWidth/2, -self.renderHeight/2)
-        end
-
-        -- anti alias and overlay
-        love.graphics.setColor(1,1,1)
-        love.graphics.setCanvas({self.postProcessingCanvas})
-        love.graphics.setShader(self.postProcessingShader)
-        self.postProcessingShader:send("xPixelSize", 1 / (520*2))
-        self.postProcessingShader:send("yPixelSize", 1 / ((520*9/16)*2))
-
-        local opacity = 1.0
-        --if GameState == "level_select" then
-        --    opacity = 0.3
-        --end
-        --if GameState == "countdown" then
-        --    opacity = GameCountdownBright
-        --    if opacity < 0.3 then
-        --        opacity = 0.3
-        --    end
-        --end
-        self.postProcessingShader:send("overlayOpacity", opacity)
-        love.graphics.clear(0,0,0,0)
-        love.graphics.draw(self.threeCanvas, self.renderWidth/2,self.renderHeight/2, 0, 1,-1, self.renderWidth/2, self.renderHeight/2)
-
-        -- motion blur
-        love.graphics.setCanvas({self.motionBlurCanvas})
-        love.graphics.setShader(self.motionBlurShader)
-        self.motionBlurShader:send("oldCanvas", self.motionBlurCanvasOld)
-        MotionBlurAmount = 0.0
-        --if MotionBlurAmount > MAX_MOTION_BLUR then
-        --    MotionBlurAmount = MAX_MOTION_BLUR
-        --elseif MotionBlurAmount < 0.0 then
-        --    MotionBlurAmount = 0.0
-        --end
-
-        self.motionBlurShader:send("amount", MotionBlurAmount)
-
-        love.graphics.clear(0,0,0,0)
-        love.graphics.draw(self.postProcessingCanvas, self.renderWidth/2,self.renderHeight/2, 0, 1,1, self.renderWidth/2, self.renderHeight/2)
-
-        -- copy motionBlurCanvas into motionBlurCanvasOld for next frame
-        love.graphics.setCanvas({self.motionBlurCanvasOld})
-        love.graphics.draw(self.motionBlurCanvas, self.renderWidth/2,self.renderHeight/2, 0, 1,1, self.renderWidth/2, self.renderHeight/2)
         love.graphics.setCanvas()
         love.graphics.setShader()
 
-        local flip = 1
-        --if shouldSwitchScreen() then
-        --    flip = -1
-        --end
-
         if drawArg == nil or drawArg == true then
-            love.graphics.draw(self.motionBlurCanvas, self.renderWidth/2,self.renderHeight/2, 0, 1,flip, self.renderWidth/2-OffsetX, self.renderHeight/2 - OffsetY)
+            love.graphics.draw(self.threeCanvas, self.renderWidth/2,self.renderHeight/2, 0, 1, -1, self.renderWidth/2-OffsetX, self.renderHeight/2 - OffsetY)
         end
     end
 

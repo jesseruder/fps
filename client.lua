@@ -6,8 +6,6 @@ function resetGame()
 end
 
 function love.load()
-    -- window graphics settings
-    --GraphicsWidth, GraphicsHeight = 520*2, (520*9/16)*2
     GraphicsWidth = love.graphics.getWidth()
     GraphicsHeight = love.graphics.getHeight()
     InterfaceWidth, InterfaceHeight = GraphicsWidth, GraphicsHeight
@@ -17,7 +15,6 @@ function love.load()
     love.graphics.setBackgroundColor(0,0.7,0.95)
     love.graphics.setDefaultFilter("linear", "linear")
     love.graphics.setLineStyle("rough")
-    -- love.window.setMode(GraphicsWidth,GraphicsHeight, {vsync = -1, msaa = 8})
 
     love.graphics.setCanvas()
 
